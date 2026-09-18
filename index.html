@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MarkWise — Edexcel IGCSE AI Examiner</title>
+<style>
+/* ============ Apple-inspired system: light, vibrant, frosted ============ */
+:root{
+  --bg:#f5f5f7;
+  --ink:#1d1d1f;
+  --ink2:#6e6e73;
+  --ink3:#aeaeb2;
+  --card:rgba(255,255,255,.72);
+  --card-solid:#ffffff;
+  --hairline:rgba(0,0,0,.08);
+  --accent:#0071e3;
+  --good:#34c759; --warn:#ff9f0a; --bad:#ff3b30;
+  --r-lg:24px; --r-md:16px; --r-sm:12px;
+  --ease-out:cubic-bezier(0.23,1,0.32,1);
+  --shadow-card:0 1px 2px rgba(0,0,0,.04), 0 12px 32px rgba(0,0,0,.06);
+  --shadow-float:0 2px 8px rgba(0,0,0,.06), 0 24px 60px rgba(0,0,0,.12);
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  background:var(--bg); color:var(--ink);
+  min-height:100vh; padding:0 20px 80px;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+/* Aurora field — fixed, soft, vibrant (Apple wallpaper energy, no purple-on-white slop) */
+.aurora{position:fixed; inset:0; z-index:-1; overflow:hidden; background:var(--bg)}
+.aurora i{position:absolute; border-radius:50%; filter:blur(90px); opacity:.5}
+.aurora i:nth-child(1){width:560px;height:560px;background:#a7d8ff;top:-180px;left:-120px}
+.aurora i:nth-child(2){width:480px;height:480px;background:#ffd9a8;top:-120px;right:-140px}
+.aurora i:nth-child(3){width:520px;height:520px;background:#c9f2d0;bottom:-220px;left:22%}
+.aurora i:nth-child(4){width:420px;height:420px;background:#ffc7d1;bottom:-160px;right:-100px;opacity:.38}
+
+.wrap{max-width:760px; margin:0 auto}
+
+/* ============ Header ============ */
+header{padding:56px 0 8px; text-align:center}
+.mark-badge{
+  display:inline-flex; align-items:center; gap:8px;
+  background:var(--card); backdrop-filter:blur(20px) saturate(180%); -webkit-backdrop-filter:blur(20px) saturate(180%);
+  border:1px solid rgba(255,255,255,.6); box-shadow:var(--shadow-card);
+  padding:7px 14px; border-radius:999px; font-size:13px; font-weight:600; color:var(--ink2);
+}
+.mark-badge .dot{width:8px;height:8px;border-radius:50%;background:var(--good);box-shadow:0 0 0 3px rgba(52,199,89,.18)}
+h1{
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Roboto,sans-serif;
+  font-size:clamp(40px,7vw,58px); line-height:1.04; letter-spacing:-0.03em;
+  font-weight:700; margin:18px 0 10px;
+}
+h1 .grad{
+  background:linear-gradient(92deg,#0071e3 0%,#00b8a9 45%,#34c759 100%);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+.tagline{color:var(--ink2); font-size:17px; line-height:1.5; max-width:520px; margin:0 auto; letter-spacing:-0.01em}
+
+/* staggered load */
+.reveal{opacity:0; transform:translateY(10px); animation:rise 520ms var(--ease-out) forwards}
+.reveal.d1{animation-delay:60ms}.reveal.d2{animation-delay:120ms}.reveal.d3{animation-delay:190ms}.reveal.d4{animation-delay:260ms}
+@keyframes rise{to{opacity:1; transform:none}}
+
+/* ============ Subject rail ============ */
+.subjects{display:flex; gap:10px; overflow-x:auto; padding:26px 4px 8px; scrollbar-width:none; -webkit-overflow-scrolling:touch}
+.subjects::-webkit-scrollbar{display:none}
+.chip{
+  flex:0 0 auto; display:flex; align-items:center; gap:9px;
+  padding:11px 18px 11px 12px; border-radius:999px; cursor:pointer; user-select:none;
+  background:var(--card); backdrop-filter:blur(20px) saturate(180%); -webkit-backdrop-filter:blur(20px) saturate(180%);
+  border:1px solid rgba(255,255,255,.6); box-shadow:var(--shadow-card);
+  font-size:15px; font-weight:600; color:var(--ink);
+  transition:transform 140ms var(--ease-out), box-shadow 140ms var(--ease-out), background 140ms ease;
+}
+.chip:active{transform:scale(.96)}
+@media (hover:hover) and (pointer:fine){ .chip:hover{transform:translateY(-1px); box-shadow:var(--shadow-float)} }
+.chip .ico{
+  width:30px;height:30px;border-radius:9px;display:grid;place-items:center;
+  color:#fff; font-size:15px; font-weight:700;
+  box-shadow:inset 0 -6px 12px rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.35);
+}
+.chip.on{background:var(--ink); color:#fff; border-color:var(--ink)}
+.chip.on .sub-count{color:rgba(255,255,255,.55)}
+.sub-count{font-size:12px; font-weight:500; color:var(--ink3)}
+
+/* ============ Cards ============ */
+.card{
+  background:var(--card); backdrop-filter:blur(24px) saturate(180%); -webkit-backdrop-filter:blur(24px) saturate(180%);
+  border:1px solid rgba(255,255,255,.65);
+  border-radius:var(--r-lg); box-shadow:var(--shadow-card);
+  padding:24px; margin-top:16px;
+}
+.seg{
+  display:inline-flex; background:rgba(0,0,0,.05); border-radius:12px; padding:3px; gap:2px; margin-bottom:18px;
+}
+.seg button{
+  border:none; background:transparent; font:inherit; font-size:13.5px; font-weight:600; color:var(--ink2);
+  padding:7px 16px; border-radius:9px; cursor:pointer;
+  transition:background 160ms ease, color 160ms ease, transform 120ms var(--ease-out);
+}
+.seg button:active{transform:scale(.97)}
+.seg button.on{background:#fff; color:var(--ink); box-shadow:0 1px 3px rgba(0,0,0,.10)}
+
+/* main nav */
+.mainnav{display:flex; justify-content:center; padding-top:26px}
+.seg.big{
+  background:rgba(0,0,0,.055); border-radius:14px; padding:4px; margin-bottom:0;
+  backdrop-filter:blur(20px) saturate(180%); -webkit-backdrop-filter:blur(20px) saturate(180%);
+}
+.seg.big button{font-size:15px; padding:9px 22px; border-radius:11px}
+.subjects{padding-top:18px}
+
+/* past papers placeholder */
+.papers-empty{text-align:center; padding:56px 32px}
+.papers-empty h3{margin:22px 0 8px; font-size:24px; letter-spacing:-0.02em; font-weight:700}
+.papers-empty p{margin:0 auto; max-width:400px; color:var(--ink2); font-size:15px; line-height:1.55}
+.soon{
+  display:inline-block; margin-top:18px; font-size:13px; font-weight:700; color:var(--accent);
+  background:rgba(0,113,227,.10); padding:6px 15px; border-radius:999px;
+}
+.papers-glyph{display:flex; justify-content:center; gap:-10px}
+.papers-glyph span{
+  width:52px; height:66px; border-radius:10px; background:#fff;
+  border:1px solid var(--hairline); box-shadow:var(--shadow-card);
+  display:inline-block;
+}
+.papers-glyph span:nth-child(1){transform:rotate(-9deg) translateX(10px)}
+.papers-glyph span:nth-child(2){transform:translateY(-5px); z-index:1; position:relative}
+.papers-glyph span:nth-child(3){transform:rotate(9deg) translateX(-10px)}
+
+.qmeta{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:12px}
+.tag{font-size:12px; font-weight:600; padding:4px 11px; border-radius:999px; letter-spacing:.01em}
+.tag.paper{background:rgba(0,113,227,.10); color:var(--accent)}
+.tag.cmd{background:rgba(0,0,0,.06); color:var(--ink2)}
+.tag.marks{color:#fff}
+.qtext{font-size:17px; line-height:1.55; letter-spacing:-0.01em; font-weight:500}
+.qnav{display:flex; align-items:center; justify-content:space-between; margin-top:16px}
+.qnav .arrows{display:flex; gap:8px}
+.iconbtn{
+  width:36px;height:36px;border-radius:50%; border:1px solid var(--hairline); background:rgba(255,255,255,.8);
+  font-size:16px; color:var(--ink); cursor:pointer; display:grid; place-items:center;
+  transition:transform 120ms var(--ease-out), background 140ms ease;
+}
+.iconbtn:active{transform:scale(.92)}
+.iconbtn:disabled{opacity:.35; cursor:default}
+.qcount{font-size:13px; color:var(--ink3); font-weight:500; font-variant-numeric:tabular-nums}
+
+label.small{display:block; font-size:13px; font-weight:600; color:var(--ink2); margin:16px 0 8px; letter-spacing:-0.005em}
+textarea, input[type=text]{
+  width:100%; font:inherit; font-size:16px; line-height:1.55; color:var(--ink);
+  background:rgba(255,255,255,.85); border:1px solid var(--hairline); border-radius:var(--r-md);
+  padding:14px 16px; resize:vertical; letter-spacing:-0.01em;
+  transition:border-color 140ms ease, box-shadow 140ms ease;
+}
+textarea:focus, input[type=text]:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 4px rgba(0,113,227,.12)}
+textarea::placeholder{color:var(--ink3)}
+
+.cta{
+  display:flex; align-items:center; justify-content:center; gap:9px; width:100%;
+  margin-top:18px; padding:15px; border:none; border-radius:14px; cursor:pointer;
+  font:inherit; font-size:16.5px; font-weight:600; color:#fff; letter-spacing:-0.01em;
+  background:var(--accent);
+  box-shadow:0 2px 10px rgba(0,113,227,.30), inset 0 1px 0 rgba(255,255,255,.25);
+  transition:transform 120ms var(--ease-out), filter 140ms ease;
+}
+.cta:active{transform:scale(.98)}
+@media (hover:hover) and (pointer:fine){ .cta:hover{filter:brightness(1.06)} }
+.cta:disabled{opacity:.55; transform:none; cursor:default}
+.spin{width:17px;height:17px;border:2.5px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.errline{color:var(--bad); font-size:14px; font-weight:500; margin-top:12px; text-align:center}
+
+/* ============ Result ============ */
+.result-head{display:flex; align-items:center; gap:22px; flex-wrap:wrap}
+.ring{position:relative; width:118px; height:118px; flex:0 0 auto}
+.ring svg{transform:rotate(-90deg)}
+.ring .track{stroke:rgba(0,0,0,.07)}
+.ring .fillc{stroke-linecap:round; transition:stroke-dashoffset 900ms var(--ease-out)}
+.ring .num{
+  position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+}
+.ring .num b{font-size:30px; font-weight:700; letter-spacing:-0.03em; line-height:1; font-variant-numeric:tabular-nums}
+.ring .num span{font-size:12px; color:var(--ink3); font-weight:600; margin-top:3px}
+.verdict h3{margin:0 0 5px; font-size:22px; letter-spacing:-0.02em; font-weight:700}
+.verdict p{margin:0; color:var(--ink2); font-size:15px; line-height:1.5; max-width:420px}
+.gradepill{
+  display:inline-flex; align-items:center; gap:6px; margin-top:10px;
+  font-size:13px; font-weight:700; padding:5px 13px; border-radius:999px; color:#fff;
+}
+
+.points{margin-top:22px; display:flex; flex-direction:column; gap:10px}
+.pt{
+  display:flex; gap:13px; align-items:flex-start;
+  background:rgba(255,255,255,.65); border:1px solid var(--hairline);
+  border-radius:var(--r-md); padding:14px 16px;
+  opacity:0; transform:translateY(8px); animation:rise 420ms var(--ease-out) forwards;
+}
+.pt .st{
+  flex:0 0 auto; width:26px; height:26px; border-radius:50%; display:grid; place-items:center;
+  font-size:13px; font-weight:800; color:#fff; margin-top:1px;
+}
+.pt.got .st{background:var(--good)} .pt.partial .st{background:var(--warn)} .pt.miss .st{background:var(--bad)}
+.pt h4{margin:0 0 3px; font-size:15px; font-weight:650; letter-spacing:-0.01em}
+.pt p{margin:0; font-size:14px; color:var(--ink2); line-height:1.5}
+
+.nextmarks{
+  margin-top:18px; border-radius:var(--r-md); padding:17px 18px;
+  background:linear-gradient(135deg, rgba(0,113,227,.09), rgba(52,199,89,.09));
+  border:1px solid rgba(0,113,227,.18);
+}
+.nextmarks h4{margin:0 0 6px; font-size:13px; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:.05em}
+.nextmarks p{margin:0; font-size:15px; line-height:1.55; color:var(--ink)}
+
+.session{
+  margin-top:16px; display:none; align-items:center; justify-content:space-between; gap:12px;
+  font-size:13.5px; color:var(--ink2); padding:13px 18px;
+  background:var(--card); backdrop-filter:blur(20px) saturate(180%); -webkit-backdrop-filter:blur(20px) saturate(180%);
+  border:1px solid rgba(255,255,255,.6); border-radius:var(--r-md); box-shadow:var(--shadow-card);
+  font-variant-numeric:tabular-nums;
+}
+.session b{color:var(--ink)}
+
+footer{margin-top:44px; text-align:center; color:var(--ink3); font-size:12.5px; line-height:1.6}
+
+@media (prefers-reduced-motion: reduce){
+  .reveal,.pt{animation:none; opacity:1; transform:none}
+  .ring .fillc{transition:none}
+  *{transition-duration:0ms !important}
+}
+@media (prefers-reduced-transparency: reduce){
+  .card,.chip,.mark-badge,.session{background:var(--card-solid); backdrop-filter:none; -webkit-backdrop-filter:none}
+}
+@media (max-width:560px){
+  .card{padding:19px}
+  .result-head{gap:16px}
+}
+</style>
+</head>
+<body>
+<div class="aurora" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+
+<div class="wrap">
+  <header>
+    <div class="mark-badge reveal"><span class="dot"></span> Edexcel IGCSE · 9–1</div>
+    <h1 class="reveal d1">Marked like a <span class="grad">real examiner.</span></h1>
+    <p class="tagline reveal d2">Write an exam answer. MarkWise grades it point-by-point against Edexcel-style mark scheme logic — and shows you exactly where your next marks are.</p>
+  </header>
+
+  <div class="mainnav reveal d3">
+    <div class="seg big" role="tablist">
+      <button id="navExam" class="on">AI Examiner</button>
+      <button id="navPapers">Past Papers</button>
+    </div>
+  </div>
+
+  <div id="examView">
+  <div class="subjects" id="subjects"></div>
+
+  <div class="card reveal d4">
+    <div class="seg" role="tablist">
+      <button id="tabBank" class="on">Question bank</button>
+      <button id="tabOwn">My own question</button>
+    </div>
+
+    <div id="bankPane">
+      <div class="qmeta">
+        <span class="tag paper" id="qPaper"></span>
+        <span class="tag cmd" id="qCmd"></span>
+        <span class="tag marks" id="qMarks"></span>
+      </div>
+      <div class="qtext" id="qText"></div>
+      <div class="qnav">
+        <span class="qcount" id="qCount"></span>
+        <div class="arrows">
+          <button class="iconbtn" id="prevQ" aria-label="Previous question">‹</button>
+          <button class="iconbtn" id="nextQ" aria-label="Next question">›</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="ownPane" style="display:none">
+      <label class="small">Paste any Edexcel IGCSE question</label>
+      <textarea id="ownQ" rows="3" placeholder="e.g. Explain two reasons why a business might choose to become a private limited company. (4)"></textarea>
+      <label class="small">Total marks</label>
+      <input type="text" id="ownMarks" inputmode="numeric" placeholder="4" style="max-width:110px">
+    </div>
+
+    <label class="small">Your answer</label>
+    <textarea id="answer" rows="7" placeholder="Write your answer exactly as you would in the exam…"></textarea>
+
+    <button class="cta" id="markBtn"><span id="btnLabel">Mark my answer</span></button>
+    <div class="errline" id="err"></div>
+  </div>
+
+  <div id="result"></div>
+
+  <div class="session" id="session">
+    <span>This session: <b id="sesCount">0</b> answers marked</span>
+    <span>Average: <b id="sesAvg">—</b></span>
+  </div>
+  </div><!-- /examView -->
+
+  <div id="papersView" style="display:none">
+    <div class="card papers-empty">
+      <div class="papers-glyph" aria-hidden="true">
+        <span></span><span></span><span></span>
+      </div>
+      <h3>Past Papers</h3>
+      <p>The full Edexcel past paper library — organised by subject, year and paper, with every question markable by the AI examiner.</p>
+      <span class="soon">Coming soon</span>
+    </div>
+  </div>
+
+  <footer>
+    Questions are original, written in authentic Edexcel IGCSE style with real command words and AO structure.<br>
+    Marking generated live by Claude. Built by Sheharyar 10D · GCS. Not affiliated with Pearson Edexcel.
+  </footer>
+</div>
+
+<script>
+/* ================= Question bank — original, Edexcel-style ================= */
+const SUBJECTS = [
+  { name:"Biology", code:"4BI1", color:"#34c759", letter:"B", qs:[
+    { p:"Paper 1 style", cmd:"Explain", m:5,
+      q:"Explain how the structure of a root hair cell is adapted for the absorption of water and mineral ions.",
+      s:"Marking points: elongated extension/hair increases surface area (1); large surface area increases rate of osmosis/absorption (1); mineral ions absorbed by active transport (1); many mitochondria (1) to release energy/ATP for active transport (1). Feature alone without linked explanation gains the feature mark only. Max 5." },
+    { p:"Paper 2 style", cmd:"Describe", m:4,
+      q:"Describe how water moves from the soil, through a plant, and into the atmosphere.",
+      s:"Marking points: water enters root hair cells by osmosis (1); moves through root cortex cell-to-cell / via cell walls (1); transported up the xylem (1); evaporates from mesophyll surfaces and diffuses out of stomata / transpiration (1). Sequence must be broadly correct. Max 4." },
+    { p:"Paper 1 style", cmd:"Explain", m:6,
+      q:"During exercise, heart rate and breathing rate both increase. Explain why these changes are needed by the muscles.",
+      s:"Marking points: muscles respire more / need more energy (1); need more oxygen delivered (1); need more glucose delivered (1); more carbon dioxide produced which must be removed (1); increased heart rate increases blood flow to muscles (1); increased breathing rate increases gas exchange at lungs / oxygen uptake (1). Reference to anaerobic respiration / lactic acid if oxygen insufficient can gain credit. Max 6." }
+  ]},
+  { name:"Chemistry", code:"4CH1", color:"#00c7be", letter:"C", qs:[
+    { p:"Paper 1 style", cmd:"Explain", m:5,
+      q:"Explain, in terms of particles, why increasing the concentration of hydrochloric acid increases the rate of its reaction with magnesium.",
+      s:"Marking points: more acid particles per unit volume (1); particles are closer together (1); collisions between reacting particles are more frequent (1); more successful collisions per second (1); so rate of reaction increases — must link to rate (1). 'More collisions' alone without frequency idea = partial. Max 5." },
+    { p:"Paper 2 style", cmd:"Describe", m:4,
+      q:"Describe a chemical test to show that a solution contains chloride ions, and give the result of the test.",
+      s:"Marking points: add dilute nitric acid (1); add silver nitrate solution (1); white precipitate forms (1); precipitate is silver chloride (1). Using hydrochloric acid instead of nitric acid loses the acid mark. Max 4." },
+    { p:"Paper 1 style", cmd:"Explain", m:6,
+      q:"Sodium reacts with chlorine to form sodium chloride. Explain, in terms of electrons, the bonding in sodium chloride and why it has a high melting point.",
+      s:"Marking points: sodium loses one electron (1); chlorine gains one electron (1); forms Na+ and Cl− ions (1); ionic bonding is strong electrostatic attraction between oppositely charged ions (1); giant ionic lattice (1); large amounts of energy needed to overcome the strong forces, so high melting point (1). Max 6." }
+  ]},
+  { name:"Physics", code:"4PH1", color:"#0071e3", letter:"P", qs:[
+    { p:"Paper 1 style", cmd:"Explain", m:4,
+      q:"A skydiver jumps from a plane and eventually reaches terminal velocity. Explain, in terms of forces, why the skydiver reaches terminal velocity.",
+      s:"Marking points: weight acts downwards and is initially greater than air resistance so skydiver accelerates (1); as speed increases, air resistance/drag increases (1); eventually air resistance equals weight (1); resultant force is zero so no acceleration — constant/terminal velocity (1). Max 4." },
+    { p:"Paper 2 style", cmd:"Describe", m:4,
+      q:"Describe the energy transfers that take place when a ball is dropped from rest and bounces on the ground, reaching a lower height than it started.",
+      s:"Marking points: gravitational potential energy transferred to kinetic energy as it falls (1); at impact some energy transferred to thermal energy and sound (1); kinetic transferred back to GPE as it rises (1); total energy conserved but some dissipated to surroundings so bounce height is lower (1). Max 4." },
+    { p:"Paper 1 style", cmd:"Explain", m:5,
+      q:"Explain how a step-up transformer works and why transformers are used in the transmission of electricity over long distances.",
+      s:"Marking points: alternating current in primary coil creates a changing magnetic field (1); changing field induces a voltage in the secondary coil (1); more turns on secondary than primary increases voltage (1); high voltage means lower current for same power (1); lower current reduces energy lost as heat in cables (1). Max 5." }
+  ]},
+  { name:"Maths", code:"4MA1", color:"#ff9f0a", letter:"M", qs:[
+    { p:"Paper 1H style", cmd:"Solve", m:4,
+      q:"Solve the simultaneous equations: 3x + 2y = 12 and x − y = 1. Show clear algebraic working.",
+      s:"Method marks: correct method to eliminate one variable, e.g. substitution x = 1 + y or multiplying second equation (M1); correct first solved value y = 1.8 or x = 2.8 (A1); correct substitution to find second variable (M1); both correct: x = 2.8, y = 1.8 (A1). Working must be shown; answer alone without working scores limited marks. Max 4." },
+    { p:"Paper 2H style", cmd:"Show that", m:3,
+      q:"Show that (n + 3)² − (n + 1)² is a multiple of 4 for all integer values of n.",
+      s:"Marking points: expand both brackets correctly — n² + 6n + 9 and n² + 2n + 1 (M1); subtract to get 4n + 8 (A1); factorise to 4(n + 2) and state this is a multiple of 4 (A1). Final statement/conclusion required for last mark. Max 3." }
+  ]},
+  { name:"Business", code:"4BS1", color:"#af52de", letter:"Bu", qs:[
+    { p:"Paper 1 style", cmd:"Explain", m:6,
+      q:"Explain two possible benefits to a small business of using social media to promote its products.",
+      s:"For each benefit: identification of a valid benefit e.g. low cost, wide reach, targeting, customer engagement (1); explanation/development of how it helps (1); further development linking to impact on the business e.g. higher sales, lower promotion costs improving profit (1). 2 × 3 marks. Chains of reasoning required — listed points without development cap at identification marks. Max 6." },
+    { p:"Paper 2 style", cmd:"Analyse", m:6,
+      q:"Analyse how an increase in interest rates might affect a business that has borrowed heavily to expand.",
+      s:"Marking points: higher interest rates increase cost of repayments (1); developed: reduces profit / cash flow pressure (1); may delay or cancel expansion plans (1); consumer spending may also fall as customers face higher borrowing costs (1); developed: lower demand/revenue (1); overall chain linking rates → costs → decisions/performance (1). Reward developed chains of analysis, not lists. Max 6." }
+  ]},
+  { name:"Geography", code:"4GE1", color:"#30b0c7", letter:"G", qs:[
+    { p:"Paper 1 style", cmd:"Explain", m:4,
+      q:"Explain two reasons why the risk of flooding is increasing in many urban areas.",
+      s:"For each reason: valid identification e.g. impermeable surfaces, removal of vegetation, climate change increasing rainfall intensity, building on floodplains (1); linked explanation of how this increases flood risk e.g. reduced infiltration so more surface runoff reaching rivers faster (1). 2 × 2. Max 4." },
+    { p:"Paper 1 style", cmd:"Explain", m:6,
+      q:"For a named tropical cyclone you have studied, explain the primary and secondary impacts on people.",
+      s:"Marking points: named example required — generic answers cap at 4 (1); primary impacts identified and developed e.g. deaths/injuries from winds and storm surge, destruction of homes (up to 3); secondary impacts identified and developed e.g. disease from contaminated water, loss of livelihoods, long-term homelessness (up to 3). Reward specific place detail. Max 6." }
+  ]},
+  { name:"English", code:"4EA1/4EB1", color:"#ff375f", letter:"E", qs:[
+    { p:"Paper 1 style", cmd:"Analyse", m:6,
+      q:"Write the opening of a piece which analyses how a writer might use language to create tension. In your answer, invent and quote a short example line, identify the technique, and explain its effect on the reader.",
+      s:"Marking points (AO2-style): quotation embedded (1); technique correctly identified e.g. short sentence, sensory imagery, personification (1); effect on reader explained, not just named (1); development — why THIS word choice specifically (1); alternative interpretation or layered effect (1); precise, analytical style using tentative language (1). Feature-spotting without effect caps low. Max 6." }
+  ]},
+  { name:"ICT", code:"4IT1", color:"#5e5ce6", letter:"IT", qs:[
+    { p:"Paper 1 style", cmd:"Explain", m:4,
+      q:"Explain two advantages to a school of storing student records in a database rather than in paper files.",
+      s:"For each advantage: identification e.g. faster searching, less physical storage, easier to update, can be backed up, access can be restricted (1); linked development explaining the benefit to the school e.g. queries find a record in seconds so staff save time (1). 2 × 2. Listed advantages with no development gain identification marks only. Max 4." },
+    { p:"Paper 1 style", cmd:"Describe", m:3,
+      q:"Describe how a firewall helps to protect a computer network.",
+      s:"Marking points: monitors/examines incoming and outgoing network traffic (1); blocks or allows traffic based on a set of rules/criteria (1); prevents unauthorised access from outside the network / can block suspicious packets or addresses (1). Max 3." },
+    { p:"Paper 1 style", cmd:"Explain", m:4,
+      q:"A company allows employees to work from home. Explain two possible risks to the company's data from remote working.",
+      s:"For each risk: identification e.g. use of unsecured home Wi-Fi, loss/theft of devices, phishing, weak passwords on personal devices (1); development linking to consequence for company data e.g. data intercepted so confidential information disclosed (1). 2 × 2. Max 4." }
+  ]},
+  { name:"Economics", code:"4EC1", color:"#ffcc00", letter:"Ec", qs:[
+    { p:"Paper 1 style", cmd:"Explain", m:4,
+      q:"Explain two reasons why a government might impose an indirect tax on cigarettes.",
+      s:"For each reason: identification e.g. discourage consumption of a demerit good, raise government revenue, reduce external costs such as healthcare burden (1); linked development e.g. higher price reduces quantity demanded so consumption falls (1). 2 × 2. Max 4." },
+    { p:"Paper 2 style", cmd:"Analyse", m:6,
+      q:"Analyse how a fall in interest rates might affect the level of consumer spending in an economy.",
+      s:"Marking points: borrowing becomes cheaper (1); developed: consumers more likely to take loans/credit for big purchases (1); saving becomes less rewarding (1); developed: incentive to spend rather than save increases (1); existing variable-rate repayments (e.g. mortgages) fall, raising disposable income (1); overall chain linking rate fall → spending rises (1). Reward developed chains of reasoning, not lists. Max 6." },
+    { p:"Paper 1 style", cmd:"Explain", m:4,
+      q:"Explain two possible costs to an economy of a high rate of inflation.",
+      s:"For each cost: identification e.g. fall in purchasing power/real incomes, menu costs, loss of international competitiveness, uncertainty reducing investment (1); linked development of the consequence (1). 2 × 2. Max 4." }
+  ]},
+  { name:"Psychology", code:"GCSE 1PS0", color:"#ff2d55", letter:"Ps", qs:[
+    { p:"Paper 1 style", cmd:"Describe", m:4,
+      q:"Describe the multi-store model of memory.",
+      s:"Marking points: information enters via sensory register/store (1); attended information passes to short-term memory, which has limited capacity (approx 7±2) and short duration (1); rehearsal keeps information in STM and transfers it to long-term memory (1); LTM has potentially unlimited capacity and long duration; stores are separate and information flows linearly (1). Max 4." },
+    { p:"Paper 2 style", cmd:"Evaluate", m:4,
+      q:"Explain one strength and one weakness of using questionnaires in psychological research.",
+      s:"Strength: identification e.g. large samples collected quickly / standardised so replicable (1) plus development e.g. improves generalisability of findings (1). Weakness: identification e.g. social desirability bias, misunderstanding of questions, low response rates (1) plus development e.g. answers may not reflect true behaviour, reducing validity (1). Max 4." },
+    { p:"Paper 1 style", cmd:"Explain", m:4,
+      q:"Explain two reasons why an eyewitness's memory of a crime may be inaccurate.",
+      s:"For each reason: identification e.g. leading questions/post-event information, anxiety/weapon focus, reconstruction using schemas (1); development linking to why recall becomes inaccurate (1). 2 × 2. Max 4." }
+  ]},
+  { name:"Computer Sci", code:"4CP0", color:"#64d2ff", letter:"CS", qs:[
+    { p:"Paper 1 style", cmd:"Explain", m:3,
+      q:"Explain why computers use binary to represent data.",
+      s:"Marking points: computer hardware/circuits have two states, e.g. on/off or high/low voltage (1); binary digits 1 and 0 map directly onto these two states (1); two-state representation is reliable/less prone to error than detecting many voltage levels (1). Max 3." },
+    { p:"Paper 2 style", cmd:"Describe", m:3,
+      q:"Describe the purpose of RAM in a computer system.",
+      s:"Marking points: temporarily stores programs and data currently in use (1); volatile — contents lost when power is off (1); allows the CPU fast access to instructions/data compared with secondary storage (1). Max 3." },
+    { p:"Paper 1 style", cmd:"Explain", m:4,
+      q:"A program searches an unsorted list of 1,000 items. Explain why a linear search must be used rather than a binary search, and one drawback of this.",
+      s:"Marking points: binary search requires the list to be sorted (1); this list is unsorted so items must be checked one by one from the start — linear search (1); drawback identified: slow for large lists (1); developed: in the worst case all 1,000 items are checked (1). Max 4." }
+  ]},
+  { name:"Accounting", code:"4AC1", color:"#a2845e", letter:"A", qs:[
+    { p:"Paper 1 style", cmd:"Explain", m:4,
+      q:"Explain two reasons why a business prepares a trial balance.",
+      s:"For each reason: identification e.g. to check the arithmetical accuracy of the double entry records, to help locate errors, to provide figures for preparing the financial statements (1); linked development explaining how/why this helps the business (1). 2 × 2. Note: a trial balance does not reveal all errors (e.g. errors of omission) — credit awareness if relevant. Max 4." },
+    { p:"Paper 1 style", cmd:"Describe", m:4,
+      q:"Describe the difference between capital expenditure and revenue expenditure, giving one example of each.",
+      s:"Marking points: capital expenditure is spending on acquiring/improving non-current assets with benefit lasting more than one year (1); valid example e.g. purchase of machinery, building extension (1); revenue expenditure is day-to-day running costs with benefit used up within the accounting period (1); valid example e.g. rent, wages, repairs (1). Max 4." },
+    { p:"Paper 2 style", cmd:"Explain", m:4,
+      q:"Explain one advantage and one disadvantage to a business of selling goods to customers on credit.",
+      s:"Advantage: identification e.g. attracts more customers / increases sales (1) plus development e.g. customers can buy now and pay later so revenue rises (1). Disadvantage: identification e.g. risk of irrecoverable (bad) debts, slower cash inflow (1) plus development e.g. cash flow problems paying own suppliers (1). Max 4." }
+  ]}
+];
+
+/* ================= State ================= */
+let subIdx = 0, qIdx = 0, mode = "bank";
+let sesMarks = [];
+
+/* ================= Elements ================= */
+const $ = id => document.getElementById(id);
+const subsEl=$("subjects"), qText=$("qText"), qPaper=$("qPaper"), qCmd=$("qCmd"), qMarks=$("qMarks"), qCount=$("qCount");
+const answer=$("answer"), markBtn=$("markBtn"), btnLabel=$("btnLabel"), err=$("err"), result=$("result");
+
+/* ================= Subject rail ================= */
+SUBJECTS.forEach((s,i)=>{
+  const c=document.createElement("div");
+  c.className="chip"+(i===0?" on":"");
+  c.innerHTML=`<span class="ico" style="background:${s.color}">${s.letter}</span>${s.name} <span class="sub-count">${s.qs.length}</span>`;
+  c.addEventListener("click",()=>{ subIdx=i; qIdx=0;
+    document.querySelectorAll(".chip").forEach((el,j)=>el.classList.toggle("on",j===i));
+    loadQ(); });
+  subsEl.appendChild(c);
+});
+
+/* ================= Tabs ================= */
+$("tabBank").addEventListener("click",()=>setMode("bank"));
+$("tabOwn").addEventListener("click",()=>setMode("own"));
+function setMode(m){ mode=m;
+  $("tabBank").classList.toggle("on",m==="bank");
+  $("tabOwn").classList.toggle("on",m==="own");
+  $("bankPane").style.display = m==="bank"?"":"none";
+  $("ownPane").style.display  = m==="own"?"":"none";
+}
+
+/* ================= Question loading ================= */
+function loadQ(){
+  const s=SUBJECTS[subIdx], q=s.qs[qIdx];
+  qPaper.textContent = s.code+" · "+q.p;
+  qCmd.textContent = q.cmd;
+  qMarks.textContent = q.m+" marks";
+  qMarks.style.background = s.color;
+  qText.textContent = q.q;
+  qCount.textContent = (qIdx+1)+" of "+s.qs.length;
+  $("prevQ").disabled = qIdx===0;
+  $("nextQ").disabled = qIdx===s.qs.length-1;
+  answer.value=""; result.innerHTML=""; err.textContent="";
+}
+$("prevQ").addEventListener("click",()=>{ if(qIdx>0){qIdx--; loadQ();} });
+$("nextQ").addEventListener("click",()=>{ if(qIdx<SUBJECTS[subIdx].qs.length-1){qIdx++; loadQ();} });
+loadQ();
+
+/* ================= Marking ================= */
+markBtn.addEventListener("click", async ()=>{
+  err.textContent="";
+  const ansTxt = answer.value.trim();
+  if(!ansTxt){ err.textContent="Write an answer first."; return; }
+  if(ansTxt.length<8){ err.textContent="That answer looks too short to mark meaningfully — write a bit more."; return; }
+
+  let qtext, scheme, total, subjName;
+  if(mode==="bank"){
+    const s=SUBJECTS[subIdx], q=s.qs[qIdx];
+    qtext=q.q; scheme=q.s; total=q.m; subjName=s.name+" ("+s.code+")";
+  } else {
+    qtext=$("ownQ").value.trim();
+    total=parseInt($("ownMarks").value,10);
+    subjName="Edexcel IGCSE";
+    if(!qtext){ err.textContent="Paste a question first."; return; }
+    if(!total || total<1 || total>25){ err.textContent="Enter the total marks (1–25)."; return; }
+    scheme="No official scheme supplied. Construct rigorous Edexcel-style marking points yourself from the command word and mark tariff, using standard Edexcel IGCSE mark scheme conventions (identification + linked development; chains of reasoning for Business; method + accuracy marks for Maths; named examples for Geography case-study questions).";
+  }
+
+  markBtn.disabled=true;
+  answer.disabled=true;
+  btnLabel.innerHTML='<span class="spin" style="display:inline-block;vertical-align:-3px;margin-right:9px"></span>Marking…';
+  result.innerHTML="";
+
+  const prompt = `You are a senior Pearson Edexcel IGCSE examiner marking to the official standard.
+
+SUBJECT: ${subjName}
+QUESTION (${total} marks): ${qtext}
+MARK SCHEME LOGIC: ${scheme}
+
+STUDENT ANSWER:
+"""${ansTxt}"""
+
+Mark strictly but fairly, exactly as at standardisation:
+- Award a mark only where the scheme's demand is genuinely met (linked explanation where required, not feature-spotting or listing).
+- Apply command-word discipline: "Explain" needs linked reasoning; "Describe" needs accurate sequence/detail; "Analyse" needs developed chains; Maths needs visible method.
+- Note misconceptions where present.
+
+Respond with ONLY a raw JSON object (no markdown, no backticks):
+{
+ "awarded": <integer 0-${total}>,
+ "total": ${total},
+ "verdict": "<one short examiner sentence summarising the answer's quality>",
+ "grade": "<indicative Edexcel 9-1 grade for THIS answer, e.g. '7' or '4-5'>",
+ "breakdown": [
+   {"label":"<short mark-point name>","status":"got|partial|miss","comment":"<one precise sentence of examiner reasoning>"}
+ ],
+ "improve": "<the single highest-value specific improvement, 1-2 sentences, exam-technique focused>"
+}
+The breakdown must cover every markable point in the scheme (aim for ${Math.min(total+1,8)} or fewer entries).`;
+
+  try{
+    const res = await fetch("/api/mark",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({ prompt })
+    });
+
+    // Read as text first — if the API route is missing, Vercel returns an
+    // HTML 404 page and res.json() would throw a cryptic browser error.
+    const raw = await res.text();
+
+    let data;
+    try{
+      data = JSON.parse(raw);
+    }catch{
+      if(res.status===404){
+        throw new Error("Server route /api/mark not found — the API function didn't deploy. Check the deploy notes.");
+      }
+      throw new Error("Server returned an unexpected response (status "+res.status+").");
+    }
+
+    if(!res.ok) throw new Error(data.error || ("Server error (status "+res.status+")"));
+    const g = data.result;
+    if(!g || typeof g.awarded!=="number" || !Array.isArray(g.breakdown)){
+      throw new Error("Marker returned an unexpected format — try again.");
+    }
+    renderResult(g);
+    sesMarks.push(g.awarded/g.total);
+    updateSession();
+  }catch(e){
+    console.error(e);
+    err.textContent = e.message && e.message!=="Failed to fetch"
+      ? e.message
+      : "Marking failed — check your connection and try again.";
+  }finally{
+    markBtn.disabled=false;
+    answer.disabled=false;
+    btnLabel.textContent="Mark my answer";
+  }
+});
+
+/* ================= Render ================= */
+function esc(s){ const d=document.createElement("div"); d.textContent=s==null?"":String(s); return d.innerHTML; }
+
+function ringColor(p){ return p>=0.75?"var(--good)":p>=0.45?"var(--warn)":"var(--bad)"; }
+
+function renderResult(g){
+  const p = g.awarded/g.total;
+  const C = 2*Math.PI*50; // r=50
+  const rows = g.breakdown.map((b,i)=>{
+    const sym = b.status==="got"?"✓":b.status==="partial"?"~":"✕";
+    return `<div class="pt ${esc(b.status)}" style="animation-delay:${120+i*60}ms">
+      <span class="st">${sym}</span>
+      <div><h4>${esc(b.label)}</h4><p>${esc(b.comment)}</p></div>
+    </div>`;
+  }).join("");
+
+  result.innerHTML = `<div class="card">
+    <div class="result-head">
+      <div class="ring">
+        <svg width="118" height="118" viewBox="0 0 118 118">
+          <circle class="track" cx="59" cy="59" r="50" fill="none" stroke-width="9"/>
+          <circle class="fillc" cx="59" cy="59" r="50" fill="none" stroke-width="9"
+            stroke="${ringColor(p)}" stroke-dasharray="${C}" stroke-dashoffset="${C}"/>
+        </svg>
+        <div class="num"><b>${g.awarded}/${g.total}</b><span>marks</span></div>
+      </div>
+      <div class="verdict">
+        <h3>${p>=0.85?"Strong answer":p>=0.6?"Solid — marks left behind":p>=0.35?"Partial credit":"Needs rebuilding"}</h3>
+        <p>${esc(g.verdict)}</p>
+        <span class="gradepill" style="background:${ringColor(p).replace("var(","").replace(")","")==="--good"?"#34c759":p>=0.45?"#ff9f0a":"#ff3b30"}">Indicative grade ${esc(g.grade)}</span>
+      </div>
+    </div>
+    <div class="points">${rows}</div>
+    <div class="nextmarks"><h4>Where your next marks are</h4><p>${esc(g.improve)}</p></div>
+  </div>`;
+
+  requestAnimationFrame(()=>{ requestAnimationFrame(()=>{
+    const f = result.querySelector(".fillc");
+    if(f) f.style.strokeDashoffset = String(C*(1-p));
+  });});
+  result.querySelector(".card").scrollIntoView({behavior:"smooth", block:"nearest"});
+}
+
+/* ================= Main nav ================= */
+$("navExam").addEventListener("click", ()=>setView("exam"));
+$("navPapers").addEventListener("click", ()=>setView("papers"));
+function setView(v){
+  $("navExam").classList.toggle("on", v==="exam");
+  $("navPapers").classList.toggle("on", v==="papers");
+  $("examView").style.display   = v==="exam" ? "" : "none";
+  $("papersView").style.display = v==="papers" ? "" : "none";
+}
+
+function updateSession(){
+  const s=$("session"); s.style.display="flex";
+  $("sesCount").textContent = sesMarks.length;
+  const avg = sesMarks.reduce((a,b)=>a+b,0)/sesMarks.length;
+  $("sesAvg").textContent = Math.round(avg*100)+"%";
+}
+</script>
+</body>
+</html>
